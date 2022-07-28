@@ -39,4 +39,4 @@ class BaseTransform:
         self.std = np.array(std, dtype=np.float32)
 
     def __call__(self, image, boxes=None, labels=None):
-        return base_transform(image, self.size, self.mean, self.std), boxes, 
+        return base_transform(image, self.size, self.mean, self.std), boxes, labels
