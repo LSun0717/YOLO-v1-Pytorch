@@ -42,7 +42,6 @@ class VOCAPIEvaluator():
 
         # dataset
         self.dataset = VOCDetection(root=data_root, 
-                                    img_size=img_size,
                                     image_sets=[('2007', set_type)],
                                     transform=transform
                                     )
@@ -65,6 +64,9 @@ class VOCAPIEvaluator():
             x = Variable(im.unsqueeze(0)).to(self.device)
             t0 = time.time()
             # forward
+            # bboxes:all the bounding box in this image
+            # scores:scores of each bounding box 
+            # cls_inds:class index of each bbounding box
             bboxes, scores, cls_inds = net(x)
             detect_time = time.time() - t0
             scale = np.array([[w, h, w, h]])

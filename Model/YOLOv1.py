@@ -70,18 +70,18 @@ class YOLOv1(nn.Module):
             return: bbox:[xmin, ymin, xmax, ymax]
         """
 
-        bbox = torch.zeros_like(bbox_pred)
+        bboxs = torch.zeros_like(bbox_pred)
         # get center_x, center_y, w, h of all bounding box
         bbox_pred[:, :, :2] = torch.sigmoid(bbox_pred[:, :, :2]) + self.grid_cell
         bbox_pred[:, :, 2:] = torch.exp(bbox_pred[:, :, 2:])
 
         # 将所有bbox的中心点坐标和宽高换算成x1y1x2y2形式
-        bbox[:, :, 0] = bbox_pred[:, :, 0] * self.stride - bbox_pred[:, :, 2] / 2
-        bbox[:, :, 1] = bbox_pred[:, :, 1] * self.stride - bbox_pred[:, :, 3] / 2
-        bbox[:, :, 2] = bbox_pred[:, :, 0] * self.stride + bbox_pred[:, :, 2] / 2
-        bbox[:, :, 3] = bbox_pred[:, :, 1] * self.stride + bbox_pred[:, :, 3] / 2
+        bboxs[:, :, 0] = bbox_pred[:, :, 0] * self.stride - bbox_pred[:, :, 2] / 2
+        bboxs[:, :, 1] = bbox_pred[:, :, 1] * self.stride - bbox_pred[:, :, 3] / 2
+        bboxs[:, :, 2] = bbox_pred[:, :, 0] * self.stride + bbox_pred[:, :, 2] / 2
+        bboxs[:, :, 3] = bbox_pred[:, :, 1] * self.stride + bbox_pred[:, :, 3] / 2
         
-        return bbox
+        return bboxs
 
     def nms(self, dets, scores):
         """"
@@ -130,7 +130,8 @@ class YOLOv1(nn.Module):
         scores = scores[(np.arange(scores.shape[0]), cls_inds)]
         
         # filter by threshold 
-        keep = np.where(scores >= self.conf_thresh)
+        # index 59 is out of bounds for axis 0 with size 1
+        keep = np.where(scores >= self.conf_thresh)     # return index which meet the criterion of conditional expression
         bboxes = bboxes[keep]
         scores = scores[keep]
         cls_inds = cls_inds[keep]
@@ -173,22 +174,23 @@ class YOLOv1(nn.Module):
         _class_pred = pred[:, :, 1:1+self.num_classes]
         # bounding box prediction
         # [B, H*W, 4], include x_offset, y_offset, w, h
-        _bbox_pred = pred[:, :, 1+self.num_classes:]
+        _bboxs_pred = pred[:, :, 1+self.num_classes:]
 
         if self.is_train:
-            conf_loss, class_loss, bbox_loss, total_loss = loss_function.loss(conf_pred=_conf_pred,
-                                                                      class_pred=_class_pred,
-                                                                      bbox_pred=_bbox_pred,
-                                                                      label=targets)
+            conf_loss, class_loss, bbox_loss, total_loss = loss_function.loss(  conf_pred=_conf_pred,
+                                                                                class_pred=_class_pred,
+                                                                                bboxs_pred=_bboxs_pred,
+                                                                                label=targets
+                                                                              )
             return conf_loss, class_loss, bbox_loss, total_loss
         else:
             # test
             with torch.no_grad():
                 # [B, H*W, 1] -> [H*W, 1]
-                conf_pred = torch.sigmoid(conf_pred)[0]
+                conf_pred = torch.sigmoid(_conf_pred)[0]
                 # [B, H*W, 4] -> [H*W, 4]
                 # clamp() for limiting the value of bbox_pred in range 0 to 1
-                bboxes = torch.clamp((self.decode_boxes(_bbox_pred) / self.input_size), .0, .1)
+                bboxes = torch.clamp((self.decode_boxes(_bboxs_pred) / self.input_size)[0], 0., 1.)
                 # [B, H*W, 1] -> [H*W, 1]
                 scores = (torch.softmax(_class_pred[0, :, :], dim=1) * conf_pred)
                 # move var to cpu for postprocess 

@@ -13,11 +13,13 @@ import torch.optim as optim
 from Augmentation.augmentations import SSDAugmentation
 import Config.train_config
 import Tools.get_label
-import Eval_utils.vocapi_evaluator
+import Eval_utils.vocapi_evaluator as VOCEval
 from Dataset_utils.voc0712 import VOC_ROOT, VOCDetection
 from Dataset_utils.voc0712 import VOC_CLASSES
 from Dataset_utils import BaseTransform
 from Dataset_utils import detection_collate
+import Dataset_utils.cocodataset as COCO
+import Eval_utils.cocoapi_evaluator as COCOEval
 
 
 def parse_args():
@@ -81,31 +83,31 @@ def train():
         dataset_dir = VOC_ROOT
         num_classes = 20
         dataset = VOCDetection(root=dataset_dir,transform=SSDAugmentation(train_size))
-        evaluator = Eval_utils.vocapi_evaluator.VOCAPIEvaluator(data_root=dataset_dir,
-                                                                img_size=val_size,
-                                                                device=device,
-                                                                transform=BaseTransform(val_size),
-                                                                labelmap=VOC_CLASSES
-                                                                )
+
+        evaluator = VOCEval.VOCAPIEvaluator(data_root=dataset_dir,
+                                            img_size=val_size,
+                                            device=device,
+                                            transform=BaseTransform(val_size),
+                                            labelmap=VOC_CLASSES
+                                            )
     # COCO Dataset
-    # elif args.dataset == 'coco':
-    #     # 加载COCO数据集
-    #     data_dir = coco_root
-    #     num_classes = 80
-    #     dataset = COCODataset(
-    #                 data_dir=data_dir,
-    #                 img_size=train_size,
-    #                 transform=SSDAugmentation(train_size),
-    #                 debug=args.debug
-    #                 )
+    elif args.dataset == 'coco':
+        # 加载COCO数据集
+        data_dir = COCO.coco_root
+        num_classes = 80
+        dataset = COCO.COCODataset(
+                    data_dir=data_dir,
+                    img_size=train_size,
+                    transform=SSDAugmentation(train_size),
+                    debug=args.debug
+                    )
 
-    #     evaluator = COCOAPIEvaluator(
-    #                     data_dir=data_dir,
-    #                     img_size=val_size,
-    #                     device=device,
-    #                     transform=BaseTransform(val_size)
-    #                     )
-
+        evaluator = COCOEval.COCOAPIEvaluator(
+                        data_dir=data_dir,
+                        img_size=val_size,
+                        device=device,
+                        transform=BaseTransform(val_size)
+                        )
     else:
         print('unknow dataset !! Only support voc and coco !!')
         exit(0)
@@ -122,7 +124,7 @@ def train():
                                 num_workers = args.num_workers,
                                 pin_memory=True
                                 )
-    # construc model
+    # construct model
     if args.version == "yolov1":
         from Model.YOLOv1 import YOLOv1
         yolov1 = YOLOv1(device=device, num_classes=num_classes, is_train=True, input_size=train_size)
