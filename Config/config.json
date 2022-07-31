@@ -1,0 +1,20 @@
+ {
+    "version":      "yolov1",
+    "dataset":      "voc",
+    "batch_size":   32,
+    "lr":           1e-3,
+    "multi_scale":  true,
+    "no_warmup":    false,
+    "wp_epoch":     1,
+    "start_epoch":  0,
+    "resume":       null,
+    "momentum":     0.9,
+    "weight_decay": 5e-4,
+    "gamma":        0.1,
+    "num_workers":  8,
+    "eval_epoch":   10,
+    "cuda":         true,
+    "tfboard":      false,
+    "debug":        false,
+    "save_folder":  "weights/"
+}

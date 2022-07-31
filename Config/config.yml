@@ -1,0 +1,19 @@
+# Hyperparameters for train
+version:      yolov1      # version of model
+dataset:      voc         # dataset for train
+batch_size:   32          # batch size for train
+lr":          1e-3        # learing rate for train
+multi_scale:  true        # use multi-scale trick
+no_warmup:    false       # select whether to use warmup learining policy
+wp_epoch:     1           # the upper bound of warm up
+start_epoch:  0           # start epoch to train
+resume:       null        # keep training
+momentum:     0.9         # Momentum value for optim
+weight_decay: 5e-4        # Weight decay for SGD
+gamma:        0.1         # Gamma update for SGD
+num_workers:  8           # Number of workers used in dataloading
+eval_epoch:   10          # interval between evaluations
+cuda:         true        # use cuda
+tfboard:      false       # use tensorboard
+debug:        false       # debug mode where only one image is trained
+save_folder:  weights/    # save weight into save_folder

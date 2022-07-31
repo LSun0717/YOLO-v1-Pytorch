@@ -201,7 +201,7 @@ if __name__ == "__main__":
     # dataset
     dataset = VOCDetection(VOC_ROOT, img_size, [('2007', 'trainval')],
                             BaseTransform([img_size, img_size], (0, 0, 0)),
-                            VOCAnnotationTransform(), mosaic=True)
+                            VOCAnnotationTransform())
     for i in range(1000):
         im, gt, h, w = dataset.pull_item(i)
         img = im.permute(1,2,0).numpy()[:, :, (2, 1, 0)].astype(np.uint8)

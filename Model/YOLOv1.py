@@ -12,7 +12,7 @@ class YOLOv1(nn.Module):
         self.num_classes = num_classes
         self.stride = 32
         self.device = device
-        self.gird_cell = self.get_grid_matrix(input_size)
+        self.grid_cell = self.get_grid_matrix(input_size)
         self.input_size = input_size
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
@@ -176,6 +176,7 @@ class YOLOv1(nn.Module):
         # [B, H*W, 4], include x_offset, y_offset, w, h
         _bboxs_pred = pred[:, :, 1+self.num_classes:]
 
+        # train
         if self.is_train:
             conf_loss, class_loss, bbox_loss, total_loss = loss_function.loss(  conf_pred=_conf_pred,
                                                                                 class_pred=_class_pred,

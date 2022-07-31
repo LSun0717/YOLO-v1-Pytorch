@@ -5,7 +5,8 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 
-from Dataset_utils.voc0712 import VOC_CLASSES, VOC_ROOT, VOCDetection, BaseTransform
+from Dataset_utils import BaseTransform
+from Dataset_utils.voc0712 import VOC_CLASSES, VOC_ROOT, VOCDetection
 import Dataset_utils.cocodataset as COCO
 
 def parse_args():
@@ -13,10 +14,10 @@ def parse_args():
     parser.add_argument('--version', default='yolov1', help="version of yolo")
     parser.add_argument('--data_source', default="voc", help="data source")
     parser.add_argument("--input_size", default=416, type=int, help="size of input image")
-    parser.add_argument("--weight", default="weight\\voc\\", type=str, help="model weight directory")
+    parser.add_argument("--weight", default="Experiments\\result_experiment\\32_ms\yolov1_150.pth", type=str, help="model weight directory")
     parser.add_argument("--conf_thresh", default=0.10, type=float, help="threshold of confidence")
     parser.add_argument("--nms_thresh", default=0.50, type=float, help="threshold of Non-Maximum Suppression")
-    parser.add_argument("vis_thresh", default=0.30, type=float, help="threshold of result visiualization ")
+    parser.add_argument("--vis_thresh", default=0.30, type=float, help="threshold of result visiualization ")
     parser.add_argument("--cuda", action="store_true", help="use cuda")
     return parser.parse_args()
 
@@ -49,13 +50,13 @@ def vis(img, bboxes, scores, cls_inds, thresh, class_colors, class_names, class_
 
     return img
 
-def test(model, device, testset, transform, thresh, class_colors=None, class_index=None, class_indexs=None, dataset='voc'):
+def detect(model, device, testset, transform, thresh, class_colors=None, class_names=None, class_index=None, class_indexs=None, dataset='voc'):
 
     num_imgs = len(dataset)
     for index in range(num_imgs):
         print("Testing img: {} / {}".format(index+1, num_imgs))
         img, _ = testset.pull_image(index)
-        h, w = img.shape
+        h, w, _ = img.shape
         # basetransform
         x = torch.from_numpy(transform(img)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
         x = x.unsqueeze(0).to(device)
@@ -66,13 +67,13 @@ def test(model, device, testset, transform, thresh, class_colors=None, class_ind
         scale = np.array([[w, h, w, h]])
         bboxs *= scale
 
-        img_processed = vis(img, bboxs, scores, cls_inds, thresh, class_colors, class_index, dataset)
+        img_processed = vis(img, bboxs, scores, cls_inds, thresh, class_colors, class_names, class_index, dataset)
         cv2.imshow('detection', img_processed)
         cv2.waitKey(0)
         # print('Saving the' + str(index) + '-th image ...')
         # cv2.imwrite('test_images/' + args.dataset+ '3/' + str(index).zfill(6) +'.jpg', img)
 
-if __name__ = "__main__":
+if __name__ == "__main__":
 
     args = parse_args()
     # choose device for evaluate
@@ -86,14 +87,14 @@ if __name__ = "__main__":
     input_size = args.input_size
 
     # use voc
-    if args.dataset == "voc":
+    if args.data_source == "voc":
         print("test on voc")
         class_names = VOC_CLASSES
         class_indexs = None
         num_classes = 20
-        dataset = VOCDetection(root=VOC_ROOT, img_size=input_size, image_sets=[('2007', test)], transform=None)
+        dataset = VOCDetection(root=VOC_ROOT, img_size=input_size, image_sets=[('2007', 'test')], transform=None)
     # use coco
-    elif args.dataset == "coco-val":
+    elif args.data_source == "coco-val":
         print("test on coco-val")        
         class_names = COCO.coco_class_labels
         class_indexs = COCO.coco_class_index 
@@ -115,20 +116,20 @@ if __name__ = "__main__":
         print("Unknow Model-----------")
         exit()
 
-    model.load_state_dict(torch.load(args.trained_model, map_location=device))
+    model.load_state_dict(torch.load(args.weight, map_location=device))
     model.to(device).eval()
     print('finished loading model')
 
     # begin test
-    test(   model=model, 
+    detect( model=model, 
             device=device, 
             testset=dataset,
             transform=BaseTransform(input_size),
-            thresh=args.visual_threshold,
+            thresh=args.vis_thresh,
             class_colors=class_colors,
             class_names=class_names,
             class_indexs=class_indexs,
-            dataset=args.dataset
+            dataset=args.data_source
         )
 
 

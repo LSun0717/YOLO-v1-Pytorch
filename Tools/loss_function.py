@@ -25,7 +25,7 @@ class MSEWithLogitsLoss(nn.Module):
             return loss
 
 
-def loss(conf_pred, class_pred, bbox_pred, label):
+def loss(conf_pred, class_pred, bboxs_pred, label):
     '''
         total loss
     '''
@@ -41,8 +41,8 @@ def loss(conf_pred, class_pred, bbox_pred, label):
 
     conf_pred = conf_pred[:, :, 0]
     class_pred = class_pred.permute(0, 2, 1)
-    offset_xy_pred = bbox_pred[:, :, :2]
-    w_h_pred = bbox_pred[:, :, 2:]
+    offset_xy_pred = bboxs_pred[:, :, :2]
+    w_h_pred = bboxs_pred[:, :, 2:]
     
     # ground truth
     obj_gt = label[:, :, 0]
